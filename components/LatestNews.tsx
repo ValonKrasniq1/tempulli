@@ -12,26 +12,41 @@ type Post = {
   content: string;
   status: string;
   image_url?: string | null;
+  is_featured?: boolean;
+  is_sidebar?: boolean;
 };
+
+const POSTS_PER_PAGE = 12;
 
 export default function LatestNews() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPosts, setTotalPosts] = useState(0);
+
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   useEffect(() => {
     async function fetchPosts() {
-      const { data, error } = await supabase
+      const from = (page - 1) * POSTS_PER_PAGE;
+      const to = from + POSTS_PER_PAGE - 1;
+
+      const { data, count, error } = await supabase
         .from("posts")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("status", "published")
-        .order("created_at", { ascending: false });
+        .neq("is_featured", true)
+        .neq("is_sidebar", true)
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (!error && data) {
-        setPosts(data);
+        setPosts(data as Post[]);
+        setTotalPosts(count || 0);
       }
     }
 
     fetchPosts();
-  }, []);
+  }, [page]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
@@ -64,6 +79,44 @@ export default function LatestNews() {
           </Link>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-10 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+            className="flex h-12 w-12 items-center justify-center rounded-full border text-xl font-bold text-black disabled:opacity-30"
+          >
+            ‹
+          </button>
+
+          {Array.from({ length: totalPages }).map((_, index) => {
+            const pageNumber = index + 1;
+
+            return (
+              <button
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
+                className={`flex h-12 w-12 items-center justify-center rounded-full font-bold ${
+                  page === pageNumber
+                    ? "bg-[#d41c3d] text-white"
+                    : "bg-white text-black"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={page === totalPages}
+            className="flex h-12 w-12 items-center justify-center rounded-full border text-xl font-bold text-black disabled:opacity-30"
+          >
+            ›
+          </button>
+        </div>
+      )}
     </section>
   );
 }
