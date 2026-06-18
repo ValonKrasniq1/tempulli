@@ -16,10 +16,8 @@ export default async function ArticleSlugPage({ params }: Props) {
     .from("posts")
     .select("*")
     .eq("slug", slug)
+    .eq("status", "published")
     .single();
-
-    console.log("SLUG:", slug);
-console.log("POST:", post);
 
   return (
     <main className="min-h-screen bg-white">
@@ -47,6 +45,12 @@ console.log("POST:", post);
               />
             ) : (
               <div className="mb-8 h-[450px] rounded-lg bg-gray-300"></div>
+            )}
+
+            {post.lead && (
+              <p className="mb-8 text-2xl font-bold leading-9 text-black">
+                {post.lead}
+              </p>
             )}
 
             <p className="whitespace-pre-line text-lg leading-8 text-gray-800">
