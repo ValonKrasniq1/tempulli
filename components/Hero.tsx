@@ -1,60 +1,107 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../lib/supabase";
+
+type Post = {
+  id: number;
+  title: string;
+  slug: string;
+  category: string;
+  content: string;
+  image_url?: string | null;
+  created_at?: string;
+};
 
 export default function Hero() {
-  const sideNews = [
-    "BE miraton planin e ri për Ballkanin Perëndimor",
-    "Drita e Gjilanit fiton dhe shkon në finale",
-    "Si inteligjenca artificiale po ndryshon punën",
-  ];
+  const [featured, setFeatured] = useState<Post | null>(null);
+  const [sideNews, setSideNews] = useState<Post[]>([]);
+
+  useEffect(() => {
+    async function fetchHeroNews() {
+      const { data: featuredData } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "published")
+        .eq("is_featured", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: sidebarData } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "published")
+        .eq("is_sidebar", true)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      setFeatured(featuredData as Post);
+      setSideNews((sidebarData as Post[]) || []);
+    }
+
+    fetchHeroNews();
+  }, []);
 
   return (
     <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-10 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <Link href="/article">
-          <div className="relative h-[420px] cursor-pointer overflow-hidden rounded bg-black transition hover:opacity-95">
-            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+        {featured ? (
+          <Link href={`/article/${featured.slug}`}>
+            <div className="relative h-[420px] cursor-pointer overflow-hidden rounded bg-black transition hover:opacity-95">
+              {featured.image_url && (
+                <img
+                  src={featured.image_url}
+                  alt={featured.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
 
-            <div className="absolute bottom-0 p-8 text-white">
-              <span className="mb-4 inline-block bg-[#d41c3d] px-3 py-1 text-xs font-bold">
-                LAJMI KRYESOR
-              </span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
 
-              <h2 className="max-w-2xl text-4xl font-bold leading-tight">
-                Kuvendi miraton masat e reja ekonomike, qeveria synon rritje
-                prej 4.2% në 2025
-              </h2>
+              <div className="absolute bottom-0 p-8 text-white">
+                <span className="mb-4 inline-block bg-[#d41c3d] px-3 py-1 text-xs font-bold">
+                  LAJMI KRYESOR
+                </span>
 
-              <p className="mt-4 max-w-xl text-sm text-gray-200">
-                Qeveria ka prezantuar paketën e re ekonomike që synon
-                përkrahjen e bizneseve dhe rritjen e investimeve.
-              </p>
+                <h2 className="max-w-2xl text-4xl font-bold leading-tight">
+                  {featured.title}
+                </h2>
 
-              <p className="mt-4 text-sm text-gray-300">
-                8 Maj 2025 • 10:45
-              </p>
+                <p className="mt-4 line-clamp-2 max-w-xl text-sm text-gray-200">
+                  {featured.content}
+                </p>
+              </div>
             </div>
+          </Link>
+        ) : (
+          <div className="flex h-[420px] items-center justify-center rounded bg-black text-white">
+            Zgjidh një lajm kryesor nga dashboard.
           </div>
-        </Link>
+        )}
       </div>
 
       <div className="space-y-5">
-        {sideNews.map((title) => (
-          <Link href="/article" key={title}>
-            <article className="cursor-pointer border-b pb-4 transition hover:opacity-70">
-              <p className="mb-2 text-xs font-bold text-[#d41c3d]">
-                LAJME
-              </p>
+        {sideNews.length === 0 ? (
+          <div className="rounded border p-4 text-sm text-gray-500">
+            Zgjidh deri në 3 lajme për anën e djathtë nga dashboard.
+          </div>
+        ) : (
+          sideNews.map((post) => (
+            <Link href={`/article/${post.slug}`} key={post.id}>
+              <article className="cursor-pointer border-b pb-4 transition hover:opacity-70">
+                <p className="mb-2 text-xs font-bold text-[#d41c3d]">
+                  {post.category}
+                </p>
 
-              <h3 className="text-lg font-bold text-black">
-                {title}
-              </h3>
+                <h3 className="text-lg font-bold text-black">{post.title}</h3>
 
-              <p className="mt-2 text-sm text-gray-500">
-                32 minuta më parë
-              </p>
-            </article>
-          </Link>
-        ))}
+                <p className="mt-2 text-sm text-gray-500">Lajm i zgjedhur</p>
+              </article>
+            </Link>
+          ))
+        )}
       </div>
     </section>
   );
