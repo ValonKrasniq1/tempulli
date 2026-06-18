@@ -11,6 +11,8 @@ type Post = {
   content: string;
   status: "published" | "draft";
   image_url?: string | null;
+  is_featured?: boolean;
+  is_sidebar?: boolean;
   created_at?: string;
 };
 
@@ -40,6 +42,8 @@ export default function AdminPage() {
   const [category, setCategory] = useState("LUGINA");
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isSidebar, setIsSidebar] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalViews: 0,
@@ -70,9 +74,7 @@ export default function AdminPage() {
       .select("*", { count: "exact", head: true })
       .gte("created_at", today.toISOString());
 
-    const { data: views } = await supabase
-      .from("page_views")
-      .select("path");
+    const { data: views } = await supabase.from("page_views").select("path");
 
     let topPage = "-";
 
@@ -144,6 +146,8 @@ export default function AdminPage() {
       content,
       status,
       image_url: imageUrl,
+      is_featured: isFeatured,
+      is_sidebar: isSidebar,
     });
 
     setLoading(false);
@@ -156,6 +160,8 @@ export default function AdminPage() {
     setTitle("");
     setContent("");
     setImageFile(null);
+    setIsFeatured(false);
+    setIsSidebar(false);
     fetchPosts();
     fetchStats();
   }
@@ -186,12 +192,16 @@ export default function AdminPage() {
 
           <div className="rounded-xl bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Vizita totale</p>
-            <h3 className="text-3xl font-bold text-black">{stats.totalViews}</h3>
+            <h3 className="text-3xl font-bold text-black">
+              {stats.totalViews}
+            </h3>
           </div>
 
           <div className="rounded-xl bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Vizita sot</p>
-            <h3 className="text-3xl font-bold text-black">{stats.todayViews}</h3>
+            <h3 className="text-3xl font-bold text-black">
+              {stats.todayViews}
+            </h3>
           </div>
 
           <div className="rounded-xl bg-white p-5 shadow">
@@ -241,6 +251,26 @@ export default function AdminPage() {
               className="mb-4 w-full rounded border p-3 text-black"
             />
 
+            <div className="mb-4 rounded border bg-gray-50 p-4">
+              <label className="mb-3 flex items-center gap-3 text-black">
+                <input
+                  type="checkbox"
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                />
+                Vendose si lajm kryesor në ballinë
+              </label>
+
+              <label className="flex items-center gap-3 text-black">
+                <input
+                  type="checkbox"
+                  checked={isSidebar}
+                  onChange={(e) => setIsSidebar(e.target.checked)}
+                />
+                Vendose në anën e djathtë të ballinës
+              </label>
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={() => addPost("published")}
@@ -263,14 +293,30 @@ export default function AdminPage() {
           <aside className="rounded-xl bg-white p-6 shadow">
             <h2 className="mb-6 text-2xl font-bold text-black">Statistika</h2>
 
-            <p className="mb-3 text-black">Published: {posts.filter((p) => p.status === "published").length}</p>
-            <p className="mb-3 text-black">Draft: {posts.filter((p) => p.status === "draft").length}</p>
+            <p className="mb-3 text-black">
+              Published: {posts.filter((p) => p.status === "published").length}
+            </p>
+
+            <p className="mb-3 text-black">
+              Draft: {posts.filter((p) => p.status === "draft").length}
+            </p>
+
+            <p className="mb-3 text-black">
+              Kryesor: {posts.filter((p) => p.is_featured).length}
+            </p>
+
+            <p className="mb-3 text-black">
+              Anash: {posts.filter((p) => p.is_sidebar).length}
+            </p>
+
             <p className="mb-3 text-black">Rifreskohet çdo 10 sekonda</p>
           </aside>
         </div>
 
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h2 className="mb-6 text-2xl font-bold text-black">Lajmet e fundit</h2>
+          <h2 className="mb-6 text-2xl font-bold text-black">
+            Lajmet e fundit
+          </h2>
 
           {posts.length === 0 ? (
             <p className="text-gray-500">Ende nuk ka lajme.</p>
@@ -279,7 +325,9 @@ export default function AdminPage() {
               {posts.map((post) => (
                 <div key={post.id} className="rounded border p-4">
                   <div className="mb-2 flex items-center justify-between gap-4">
-                    <h3 className="text-xl font-bold text-black">{post.title}</h3>
+                    <h3 className="text-xl font-bold text-black">
+                      {post.title}
+                    </h3>
 
                     <button
                       onClick={() => deletePost(post.id)}
@@ -291,6 +339,8 @@ export default function AdminPage() {
 
                   <p className="mb-2 text-sm font-bold text-[#d41c3d]">
                     {post.category} • {post.status}
+                    {post.is_featured ? " • LAJM KRYESOR" : ""}
+                    {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
                   </p>
 
                   {post.image_url && (
