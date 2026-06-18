@@ -8,8 +8,9 @@ type Post = {
   title: string;
   slug: string;
   category: string;
+  lead?: string | null;
   content: string;
-  status: "published" | "draft";
+  status: "published" | "draft" | "archived";
   image_url?: string | null;
   is_featured?: boolean;
   is_sidebar?: boolean;
@@ -40,16 +41,20 @@ function createSlug(title: string) {
 export default function AdminPage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("LUGINA");
+  const [lead, setLead] = useState("");
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isSidebar, setIsSidebar] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalViews: 0,
     todayViews: 0,
     topPage: "-",
   });
+
   const [loading, setLoading] = useState(false);
 
   async function fetchPosts() {
@@ -99,9 +104,7 @@ export default function AdminPage() {
     fetchPosts();
     fetchStats();
 
-    const interval = setInterval(() => {
-      fetchStats();
-    }, 10000);
+    const interval = setInterval(fetchStats, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -129,6 +132,17 @@ export default function AdminPage() {
     return data.publicUrl;
   }
 
+  function resetForm() {
+    setTitle("");
+    setCategory("LUGINA");
+    setLead("");
+    setContent("");
+    setImageFile(null);
+    setIsFeatured(false);
+    setIsSidebar(false);
+    setEditingPost(null);
+  }
+
   async function addPost(status: "published" | "draft") {
     if (!title || !content) {
       alert("Shkruaj titullin dhe përmbajtjen.");
@@ -143,6 +157,7 @@ export default function AdminPage() {
       title,
       slug: createSlug(title),
       category,
+      lead,
       content,
       status,
       image_url: imageUrl,
@@ -157,16 +172,93 @@ export default function AdminPage() {
       return;
     }
 
-    setTitle("");
-    setContent("");
-    setImageFile(null);
-    setIsFeatured(false);
-    setIsSidebar(false);
+    resetForm();
     fetchPosts();
     fetchStats();
   }
 
+  async function updatePost() {
+    if (!editingPost) return;
+
+    if (!title || !content) {
+      alert("Shkruaj titullin dhe përmbajtjen.");
+      return;
+    }
+
+    setLoading(true);
+
+    const newImageUrl = imageFile ? await uploadImage() : editingPost.image_url;
+
+    const { error } = await supabase
+      .from("posts")
+      .update({
+        title,
+        slug: createSlug(title),
+        category,
+        lead,
+        content,
+        image_url: newImageUrl,
+        is_featured: isFeatured,
+        is_sidebar: isSidebar,
+      })
+      .eq("id", editingPost.id);
+
+    setLoading(false);
+
+    if (error) {
+      alert("Gabim gjatë editimit: " + error.message);
+      return;
+    }
+
+    resetForm();
+    fetchPosts();
+    fetchStats();
+  }
+
+  function startEdit(post: Post) {
+    setEditingPost(post);
+    setTitle(post.title);
+    setCategory(post.category);
+    setLead(post.lead || "");
+    setContent(post.content);
+    setIsFeatured(!!post.is_featured);
+    setIsSidebar(!!post.is_sidebar);
+    setImageFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function archivePost(id: number) {
+    const { error } = await supabase
+      .from("posts")
+      .update({ status: "archived" })
+      .eq("id", id);
+
+    if (error) {
+      alert("Gabim gjatë arkivimit: " + error.message);
+      return;
+    }
+
+    fetchPosts();
+  }
+
+  async function restorePost(id: number) {
+    const { error } = await supabase
+      .from("posts")
+      .update({ status: "published" })
+      .eq("id", id);
+
+    if (error) {
+      alert("Gabim gjatë rikthimit: " + error.message);
+      return;
+    }
+
+    fetchPosts();
+  }
+
   async function deletePost(id: number) {
+    const confirmDelete = confirm("A je i sigurt që do ta fshish përgjithmonë?");
+    if (!confirmDelete) return;
+
     const { error } = await supabase.from("posts").delete().eq("id", id);
 
     if (error) {
@@ -215,7 +307,7 @@ export default function AdminPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           <section className="rounded-xl bg-white p-6 shadow lg:col-span-2">
             <h2 className="mb-6 text-2xl font-bold text-black">
-              Shto lajm të ri
+              {editingPost ? "Edito lajmin" : "Shto lajm të ri"}
             </h2>
 
             <input
@@ -237,6 +329,14 @@ export default function AdminPage() {
             </select>
 
             <textarea
+              value={lead}
+              onChange={(e) => setLead(e.target.value)}
+              placeholder="Paragrafi hyrës / lead - ky del më i theksuar në artikull"
+              rows={3}
+              className="mb-4 w-full rounded border p-3 text-black"
+            />
+
+            <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Përmbajtja e lajmit"
@@ -250,6 +350,14 @@ export default function AdminPage() {
               onChange={(e) => setImageFile(e.target.files?.[0] || null)}
               className="mb-4 w-full rounded border p-3 text-black"
             />
+
+            {editingPost?.image_url && (
+              <img
+                src={editingPost.image_url}
+                alt={editingPost.title}
+                className="mb-4 h-40 w-full rounded object-cover"
+              />
+            )}
 
             <div className="mb-4 rounded border bg-gray-50 p-4">
               <label className="mb-3 flex items-center gap-3 text-black">
@@ -271,22 +379,43 @@ export default function AdminPage() {
               </label>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => addPost("published")}
-                disabled={loading}
-                className="rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-60"
-              >
-                {loading ? "Duke publikuar..." : "Publiko"}
-              </button>
+            <div className="flex flex-wrap gap-3">
+              {editingPost ? (
+                <>
+                  <button
+                    onClick={updatePost}
+                    disabled={loading}
+                    className="rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-60"
+                  >
+                    {loading ? "Duke ruajtur..." : "Ruaj ndryshimet"}
+                  </button>
 
-              <button
-                onClick={() => addPost("draft")}
-                disabled={loading}
-                className="rounded bg-black px-6 py-3 font-bold text-white disabled:opacity-60"
-              >
-                Ruaj Draft
-              </button>
+                  <button
+                    onClick={resetForm}
+                    className="rounded bg-gray-200 px-6 py-3 font-bold text-black"
+                  >
+                    Anulo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => addPost("published")}
+                    disabled={loading}
+                    className="rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-60"
+                  >
+                    {loading ? "Duke publikuar..." : "Publiko"}
+                  </button>
+
+                  <button
+                    onClick={() => addPost("draft")}
+                    disabled={loading}
+                    className="rounded bg-black px-6 py-3 font-bold text-white disabled:opacity-60"
+                  >
+                    Ruaj Draft
+                  </button>
+                </>
+              )}
             </div>
           </section>
 
@@ -302,14 +431,16 @@ export default function AdminPage() {
             </p>
 
             <p className="mb-3 text-black">
+              Archived: {posts.filter((p) => p.status === "archived").length}
+            </p>
+
+            <p className="mb-3 text-black">
               Kryesor: {posts.filter((p) => p.is_featured).length}
             </p>
 
             <p className="mb-3 text-black">
               Anash: {posts.filter((p) => p.is_sidebar).length}
             </p>
-
-            <p className="mb-3 text-black">Rifreskohet çdo 10 sekonda</p>
           </aside>
         </div>
 
@@ -329,12 +460,37 @@ export default function AdminPage() {
                       {post.title}
                     </h3>
 
-                    <button
-                      onClick={() => deletePost(post.id)}
-                      className="rounded bg-gray-100 px-3 py-1 text-sm font-bold text-red-600"
-                    >
-                      Fshi
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => startEdit(post)}
+                        className="rounded bg-blue-100 px-3 py-1 text-sm font-bold text-blue-700"
+                      >
+                        Edito
+                      </button>
+
+                      {post.status === "archived" ? (
+                        <button
+                          onClick={() => restorePost(post.id)}
+                          className="rounded bg-green-100 px-3 py-1 text-sm font-bold text-green-700"
+                        >
+                          Rikthe
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => archivePost(post.id)}
+                          className="rounded bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700"
+                        >
+                          Arkivo
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => deletePost(post.id)}
+                        className="rounded bg-gray-100 px-3 py-1 text-sm font-bold text-red-600"
+                      >
+                        Fshi
+                      </button>
+                    </div>
                   </div>
 
                   <p className="mb-2 text-sm font-bold text-[#d41c3d]">
@@ -349,6 +505,12 @@ export default function AdminPage() {
                       alt={post.title}
                       className="mb-3 h-48 w-full rounded object-cover"
                     />
+                  )}
+
+                  {post.lead && (
+                    <p className="mb-2 text-lg font-bold text-black">
+                      {post.lead}
+                    </p>
                   )}
 
                   <p className="text-gray-700">{post.content}</p>
