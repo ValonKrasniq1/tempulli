@@ -105,7 +105,6 @@ export default function AdminPage() {
     fetchStats();
 
     const interval = setInterval(fetchStats, 10000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -150,7 +149,6 @@ export default function AdminPage() {
     }
 
     setLoading(true);
-
     const imageUrl = await uploadImage();
 
     const { error } = await supabase.from("posts").insert({
@@ -331,7 +329,7 @@ export default function AdminPage() {
             <textarea
               value={lead}
               onChange={(e) => setLead(e.target.value)}
-              placeholder="Paragrafi hyrës / lead - ky del më i theksuar në artikull"
+              placeholder="Paragrafi hyrës / lead"
               rows={3}
               className="mb-4 w-full rounded border p-3 text-black"
             />
@@ -452,15 +450,46 @@ export default function AdminPage() {
           {posts.length === 0 ? (
             <p className="text-gray-500">Ende nuk ka lajme.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {posts.map((post) => (
-                <div key={post.id} className="rounded border p-4">
-                  <div className="mb-2 flex items-center justify-between gap-4">
-                    <h3 className="text-xl font-bold text-black">
-                      {post.title}
-                    </h3>
+                <div
+                  key={post.id}
+                  className="rounded-xl border bg-white p-4 shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                    {post.image_url ? (
+                      <img
+                        src={post.image_url}
+                        alt={post.title}
+                        className="h-28 w-full rounded-lg object-cover md:w-44"
+                      />
+                    ) : (
+                      <div className="h-28 w-full rounded-lg bg-gray-300 md:w-44" />
+                    )}
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="line-clamp-2 text-lg font-bold leading-snug text-black">
+                        {post.title}
+                      </h3>
+
+                      <p className="mt-1 text-sm font-bold text-[#d41c3d]">
+                        {post.category} • {post.status}
+                        {post.is_featured ? " • LAJM KRYESOR" : ""}
+                        {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
+                      </p>
+
+                      {post.lead ? (
+                        <p className="mt-2 line-clamp-2 text-sm font-semibold text-gray-800">
+                          {post.lead}
+                        </p>
+                      ) : (
+                        <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                          {post.content}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 md:flex-col">
                       <button
                         onClick={() => startEdit(post)}
                         className="rounded bg-blue-100 px-3 py-1 text-sm font-bold text-blue-700"
@@ -492,28 +521,6 @@ export default function AdminPage() {
                       </button>
                     </div>
                   </div>
-
-                  <p className="mb-2 text-sm font-bold text-[#d41c3d]">
-                    {post.category} • {post.status}
-                    {post.is_featured ? " • LAJM KRYESOR" : ""}
-                    {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
-                  </p>
-
-                  {post.image_url && (
-                    <img
-                      src={post.image_url}
-                      alt={post.title}
-                      className="mb-3 h-48 w-full rounded object-cover"
-                    />
-                  )}
-
-                  {post.lead && (
-                    <p className="mb-2 text-lg font-bold text-black">
-                      {post.lead}
-                    </p>
-                  )}
-
-                  <p className="text-gray-700">{post.content}</p>
                 </div>
               ))}
             </div>
