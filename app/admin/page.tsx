@@ -8,6 +8,7 @@ type Post = {
   title: string;
   slug: string;
   category: string;
+  subcategory?: string | null;
   lead?: string | null;
   content: string;
   status: "published" | "draft" | "archived";
@@ -24,6 +25,24 @@ type Stats = {
 };
 
 const POSTS_PER_PAGE = 10;
+
+const categoryOptions = {
+  LAJME: [
+    "Lugina e Preshevës",
+    "Kosovë",
+    "Shqipëri",
+    "Diasporë",
+    "Rajon",
+    "Evropë",
+    "Botë",
+  ],
+  SPORT: ["Futboll", "Basketboll", "Formula 1", "Sporte të tjera"],
+  "TECH & AUTO": ["Teknologji", "Automjete", "Telefona", "Lojëra"],
+  FUN: ["Kuriozitete", "Fakte", "Të tjera"],
+  KULTURË: ["Film", "Muzikë", "Histori", "Libra", "Fotografi"],
+  EKONOMI: ["Financa", "Biznes"],
+  MAGAZINA: ["Shëndeti", "Jetë", "Lifestyle", "Kuriozitete"],
+};
 
 function createSlug(title: string) {
   return title
@@ -42,7 +61,8 @@ function createSlug(title: string) {
 
 export default function AdminPage() {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("LUGINA");
+  const [category, setCategory] = useState("LAJME");
+  const [subcategory, setSubcategory] = useState("");
   const [lead, setLead] = useState("");
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -96,9 +116,11 @@ export default function AdminPage() {
 
     if (views && views.length > 0) {
       const counts: Record<string, number> = {};
+
       views.forEach((view) => {
         counts[view.path] = (counts[view.path] || 0) + 1;
       });
+
       topPage = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
     }
 
@@ -142,7 +164,8 @@ export default function AdminPage() {
 
   function resetForm() {
     setTitle("");
-    setCategory("LUGINA");
+    setCategory("LAJME");
+    setSubcategory("");
     setLead("");
     setContent("");
     setImageFile(null);
@@ -164,6 +187,7 @@ export default function AdminPage() {
       title,
       slug: createSlug(title),
       category,
+      subcategory,
       lead,
       content,
       status,
@@ -202,6 +226,7 @@ export default function AdminPage() {
         title,
         slug: createSlug(title),
         category,
+        subcategory,
         lead,
         content,
         image_url: newImageUrl,
@@ -225,7 +250,8 @@ export default function AdminPage() {
   function startEdit(post: Post) {
     setEditingPost(post);
     setTitle(post.title);
-    setCategory(post.category);
+    setCategory(post.category || "LAJME");
+    setSubcategory(post.subcategory || "");
     setLead(post.lead || "");
     setContent(post.content);
     setIsFeatured(!!post.is_featured);
@@ -320,13 +346,32 @@ export default function AdminPage() {
 
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSubcategory("");
+              }}
               className="mb-4 w-full rounded border p-3 text-black"
             >
-              <option>LUGINA</option>
-              <option>KOSOVË</option>
+              <option>LAJME</option>
               <option>SPORT</option>
-              <option>TEKNOLOGJI</option>
+              <option>TECH & AUTO</option>
+              <option>FUN</option>
+              <option>KULTURË</option>
+              <option>EKONOMI</option>
+              <option>MAGAZINA</option>
+            </select>
+
+            <select
+              value={subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              className="mb-4 w-full rounded border p-3 text-black"
+            >
+              <option value="">Zgjidh nënkategorinë</option>
+              {categoryOptions[
+                category as keyof typeof categoryOptions
+              ]?.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
             </select>
 
             <textarea
@@ -426,19 +471,15 @@ export default function AdminPage() {
             <p className="mb-3 text-black">
               Published: {posts.filter((p) => p.status === "published").length}
             </p>
-
             <p className="mb-3 text-black">
               Draft: {posts.filter((p) => p.status === "draft").length}
             </p>
-
             <p className="mb-3 text-black">
               Archived: {posts.filter((p) => p.status === "archived").length}
             </p>
-
             <p className="mb-3 text-black">
               Kryesor: {posts.filter((p) => p.is_featured).length}
             </p>
-
             <p className="mb-3 text-black">
               Anash: {posts.filter((p) => p.is_sidebar).length}
             </p>
@@ -448,7 +489,6 @@ export default function AdminPage() {
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
           <div className="mb-6 flex items-center justify-between gap-4">
             <h2 className="text-2xl font-bold text-black">Lajmet e fundit</h2>
-
             <p className="text-sm text-gray-500">
               Faqja {currentPage} nga {totalPages || 1}
             </p>
@@ -481,7 +521,9 @@ export default function AdminPage() {
                         </h3>
 
                         <p className="mt-1 text-sm font-bold text-[#d41c3d]">
-                          {post.category} • {post.status}
+                          {post.category}
+                          {post.subcategory ? ` • ${post.subcategory}` : ""} •{" "}
+                          {post.status}
                           {post.is_featured ? " • LAJM KRYESOR" : ""}
                           {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
                         </p>
