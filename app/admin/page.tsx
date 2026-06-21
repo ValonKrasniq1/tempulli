@@ -23,6 +23,8 @@ type Stats = {
   topPage: string;
 };
 
+const POSTS_PER_PAGE = 10;
+
 function createSlug(title: string) {
   return title
     .toLowerCase()
@@ -49,6 +51,8 @@ export default function AdminPage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
 
   const [posts, setPosts] = useState<Post[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [stats, setStats] = useState<Stats>({
     totalViews: 0,
     todayViews: 0,
@@ -57,13 +61,20 @@ export default function AdminPage() {
 
   const [loading, setLoading] = useState(false);
 
+  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const paginatedPosts = posts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+
   async function fetchPosts() {
     const { data, error } = await supabase
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data) setPosts(data as Post[]);
+    if (!error && data) {
+      setPosts(data as Post[]);
+      setCurrentPage(1);
+    }
   }
 
   async function fetchStats() {
@@ -85,11 +96,9 @@ export default function AdminPage() {
 
     if (views && views.length > 0) {
       const counts: Record<string, number> = {};
-
       views.forEach((view) => {
         counts[view.path] = (counts[view.path] || 0) + 1;
       });
-
       topPage = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
     }
 
@@ -282,23 +291,17 @@ export default function AdminPage() {
 
           <div className="rounded-xl bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Vizita totale</p>
-            <h3 className="text-3xl font-bold text-black">
-              {stats.totalViews}
-            </h3>
+            <h3 className="text-3xl font-bold text-black">{stats.totalViews}</h3>
           </div>
 
           <div className="rounded-xl bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Vizita sot</p>
-            <h3 className="text-3xl font-bold text-black">
-              {stats.todayViews}
-            </h3>
+            <h3 className="text-3xl font-bold text-black">{stats.todayViews}</h3>
           </div>
 
           <div className="rounded-xl bg-white p-5 shadow">
             <p className="text-sm text-gray-500">Faqja më e vizituar</p>
-            <h3 className="truncate text-lg font-bold text-black">
-              {stats.topPage}
-            </h3>
+            <h3 className="truncate text-lg font-bold text-black">{stats.topPage}</h3>
           </div>
         </div>
 
@@ -329,7 +332,7 @@ export default function AdminPage() {
             <textarea
               value={lead}
               onChange={(e) => setLead(e.target.value)}
-              placeholder="Paragrafi hyrës / lead"
+              placeholder="Paragrafi hyrës / lead - ky del më i theksuar në artikull"
               rows={3}
               className="mb-4 w-full rounded border p-3 text-black"
             />
@@ -443,87 +446,133 @@ export default function AdminPage() {
         </div>
 
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h2 className="mb-6 text-2xl font-bold text-black">
-            Lajmet e fundit
-          </h2>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold text-black">Lajmet e fundit</h2>
+
+            <p className="text-sm text-gray-500">
+              Faqja {currentPage} nga {totalPages || 1}
+            </p>
+          </div>
 
           {posts.length === 0 ? (
             <p className="text-gray-500">Ende nuk ka lajme.</p>
           ) : (
-            <div className="space-y-3">
-              {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="rounded-xl border bg-white p-4 shadow-sm"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                    {post.image_url ? (
-                      <img
-                        src={post.image_url}
-                        alt={post.title}
-                        className="h-28 w-full rounded-lg object-cover md:w-44"
-                      />
-                    ) : (
-                      <div className="h-28 w-full rounded-lg bg-gray-300 md:w-44" />
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 text-lg font-bold leading-snug text-black">
-                        {post.title}
-                      </h3>
-
-                      <p className="mt-1 text-sm font-bold text-[#d41c3d]">
-                        {post.category} • {post.status}
-                        {post.is_featured ? " • LAJM KRYESOR" : ""}
-                        {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
-                      </p>
-
-                      {post.lead ? (
-                        <p className="mt-2 line-clamp-2 text-sm font-semibold text-gray-800">
-                          {post.lead}
-                        </p>
+            <>
+              <div className="space-y-3">
+                {paginatedPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="rounded-xl border bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                      {post.image_url ? (
+                        <img
+                          src={post.image_url}
+                          alt={post.title}
+                          className="h-28 w-full rounded-lg object-cover md:w-44"
+                        />
                       ) : (
-                        <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                          {post.content}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 md:flex-col">
-                      <button
-                        onClick={() => startEdit(post)}
-                        className="rounded bg-blue-100 px-3 py-1 text-sm font-bold text-blue-700"
-                      >
-                        Edito
-                      </button>
-
-                      {post.status === "archived" ? (
-                        <button
-                          onClick={() => restorePost(post.id)}
-                          className="rounded bg-green-100 px-3 py-1 text-sm font-bold text-green-700"
-                        >
-                          Rikthe
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => archivePost(post.id)}
-                          className="rounded bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700"
-                        >
-                          Arkivo
-                        </button>
+                        <div className="h-28 w-full rounded-lg bg-gray-300 md:w-44" />
                       )}
 
-                      <button
-                        onClick={() => deletePost(post.id)}
-                        className="rounded bg-gray-100 px-3 py-1 text-sm font-bold text-red-600"
-                      >
-                        Fshi
-                      </button>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="line-clamp-2 text-lg font-bold leading-snug text-black">
+                          {post.title}
+                        </h3>
+
+                        <p className="mt-1 text-sm font-bold text-[#d41c3d]">
+                          {post.category} • {post.status}
+                          {post.is_featured ? " • LAJM KRYESOR" : ""}
+                          {post.is_sidebar ? " • ANASH DJATHTAS" : ""}
+                        </p>
+
+                        {post.lead ? (
+                          <p className="mt-2 line-clamp-2 text-sm font-semibold text-gray-800">
+                            {post.lead}
+                          </p>
+                        ) : (
+                          <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                            {post.content}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 md:flex-col">
+                        <button
+                          onClick={() => startEdit(post)}
+                          className="rounded bg-blue-100 px-3 py-1 text-sm font-bold text-blue-700"
+                        >
+                          Edito
+                        </button>
+
+                        {post.status === "archived" ? (
+                          <button
+                            onClick={() => restorePost(post.id)}
+                            className="rounded bg-green-100 px-3 py-1 text-sm font-bold text-green-700"
+                          >
+                            Rikthe
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => archivePost(post.id)}
+                            className="rounded bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700"
+                          >
+                            Arkivo
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => deletePost(post.id)}
+                          className="rounded bg-gray-100 px-3 py-1 text-sm font-bold text-red-600"
+                        >
+                          Fshi
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="rounded border px-4 py-2 font-bold text-black disabled:opacity-30"
+                  >
+                    ‹
+                  </button>
+
+                  {Array.from({ length: totalPages }).map((_, index) => {
+                    const pageNumber = index + 1;
+
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`rounded px-4 py-2 font-bold ${
+                          currentPage === pageNumber
+                            ? "bg-[#d41c3d] text-white"
+                            : "bg-gray-100 text-black"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="rounded border px-4 py-2 font-bold text-black disabled:opacity-30"
+                  >
+                    ›
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </section>
       </div>
