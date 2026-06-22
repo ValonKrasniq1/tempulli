@@ -30,10 +30,7 @@ export default function TopCampaign() {
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("TopCampaign error:", error.message);
-        return;
-      }
+      if (error) return;
 
       const now = new Date();
 
@@ -44,7 +41,6 @@ export default function TopCampaign() {
         }) || [];
 
       const exclusive = validCampaigns.find((item) => item.is_exclusive);
-
       setCampaigns(exclusive ? [exclusive] : validCampaigns);
     }
 
@@ -68,27 +64,29 @@ export default function TopCampaign() {
   const campaign = campaigns[current];
 
   const content = (
-    <div className="bg-black text-white">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex min-w-0 items-center gap-4">
+    <section className="border-b bg-[#111111] text-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
           {campaign.media_url && (
-            campaign.media_type === "video" ? (
-              <video
-                src={campaign.media_url}
-                muted
-                autoPlay
-                loop
-                playsInline
-                controls
-                className="h-20 w-44 rounded-lg bg-white object-cover"
-              />
-            ) : (
-              <img
-                src={campaign.media_url}
-                alt={campaign.title}
-                className="h-20 w-44 rounded-lg bg-white object-cover"
-              />
-            )
+            <div className="overflow-hidden rounded-xl bg-white/10">
+              {campaign.media_type === "video" ? (
+                <video
+                  src={campaign.media_url}
+                  muted
+                  autoPlay
+                  loop
+                  playsInline
+                  controls
+                  className="h-[170px] w-full object-cover md:h-[135px] md:w-[240px]"
+                />
+              ) : (
+                <img
+                  src={campaign.media_url}
+                  alt={campaign.title}
+                  className="h-[170px] w-full object-cover md:h-[135px] md:w-[240px]"
+                />
+              )}
+            </div>
           )}
 
           <div className="min-w-0">
@@ -96,12 +94,12 @@ export default function TopCampaign() {
               {campaign.campaign_type || "MARKETING"}
             </span>
 
-            <h2 className="truncate text-xl font-extrabold leading-tight md:text-2xl">
+            <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">
               {campaign.title}
             </h2>
 
             {campaign.description && (
-              <p className="mt-1 line-clamp-1 text-sm text-gray-300">
+              <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-6 text-gray-300 md:text-base">
                 {campaign.description}
               </p>
             )}
@@ -109,12 +107,12 @@ export default function TopCampaign() {
         </div>
 
         {campaign.link_url && (
-          <span className="shrink-0 text-sm font-bold text-white underline">
+          <span className="shrink-0 rounded-full border border-white/30 px-4 py-2 text-sm font-bold text-white transition hover:bg-white hover:text-black">
             Kliko për më shumë →
           </span>
         )}
       </div>
-    </div>
+    </section>
   );
 
   if (campaign.link_url) {
