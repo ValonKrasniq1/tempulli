@@ -1,4 +1,5 @@
 import TopBar from "../components/TopBar";
+import TopCampaign from "../components/TopCampaign";
 import Header from "../components/Header";
 import AdsBanner from "../components/AdsBanner";
 import Hero from "../components/Hero";
@@ -12,6 +13,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <TopBar />
+      <TopCampaign />
       <Header />
       <BreakingNews />
       <AdsBanner />
