@@ -10,12 +10,17 @@ type LiveMessage = {
   type: string;
   is_active: boolean;
   sort_order: number;
+  duration_seconds: number;
 };
 
 export default function LivePage() {
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   const [message, setMessage] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [type, setType] = useState("LIVE");
+  const [durationSeconds, setDurationSeconds] = useState(10);
+
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -26,14 +31,31 @@ export default function LivePage() {
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
-    if (data) setMessages(data);
+    if (data) setMessages(data as LiveMessage[]);
   }
 
   useEffect(() => {
     fetchMessages();
   }, []);
 
-  async function addMessage() {
+  function resetForm() {
+    setEditingId(null);
+    setMessage("");
+    setLinkUrl("");
+    setType("LIVE");
+    setDurationSeconds(10);
+  }
+
+  function startEdit(item: LiveMessage) {
+    setEditingId(item.id);
+    setMessage(item.message);
+    setLinkUrl(item.link_url || "");
+    setType(item.type || "LIVE");
+    setDurationSeconds(item.duration_seconds || 10);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveMessage() {
     if (!message.trim()) {
       alert("Shkruaje mesazhin LIVE.");
       return;
@@ -41,18 +63,25 @@ export default function LivePage() {
 
     setLoading(true);
 
-    await supabase.from("live_messages").insert({
+    const payload = {
       message,
       link_url: linkUrl || null,
       type,
+      duration_seconds: durationSeconds,
       is_active: true,
-      sort_order: messages.length + 1,
-    });
+    };
 
-    setMessage("");
-    setLinkUrl("");
-    setType("LIVE");
+    if (editingId) {
+      await supabase.from("live_messages").update(payload).eq("id", editingId);
+    } else {
+      await supabase.from("live_messages").insert({
+        ...payload,
+        sort_order: messages.length + 1,
+      });
+    }
+
     setLoading(false);
+    resetForm();
     fetchMessages();
   }
 
@@ -76,7 +105,13 @@ export default function LivePage() {
   return (
     <div className="space-y-6 text-black">
       <div className="rounded-xl bg-white p-6 shadow">
-        <h1 className="mb-6 text-3xl font-bold text-black">LIVE Messages</h1>
+        <h1 className="mb-2 text-3xl font-extrabold text-black">
+          {editingId ? "Edito LIVE Message" : "LIVE Messages"}
+        </h1>
+
+        <p className="mb-6 text-gray-600">
+          Menaxho mesazhet që shfaqen në shiritin LIVE të portalit.
+        </p>
 
         <div className="space-y-4">
           <input
@@ -95,30 +130,64 @@ export default function LivePage() {
             className="w-full rounded border p-3 text-black placeholder:text-gray-400"
           />
 
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full rounded border p-3 text-black"
-          >
-            <option value="LIVE">LIVE</option>
-            <option value="MARKETING">MARKETING</option>
-            <option value="SPORT">SPORT</option>
-            <option value="EVENT">EVENT</option>
-            <option value="NJOFTIM">NJOFTIM</option>
-          </select>
+          <div className="grid gap-4 md:grid-cols-2">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full rounded border p-3 text-black"
+            >
+              <option value="LIVE">LIVE</option>
+              <option value="MARKETING">MARKETING</option>
+              <option value="SPORT">SPORT</option>
+              <option value="EVENT">EVENT</option>
+              <option value="NJOFTIM">NJOFTIM</option>
+              <option value="LAJM EKSKLUZIV">LAJM EKSKLUZIV</option>
+            </select>
 
-          <button
-            onClick={addMessage}
-            disabled={loading}
-            className="rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-50"
-          >
-            {loading ? "Duke shtuar..." : "Shto LIVE"}
-          </button>
+            <select
+              value={durationSeconds}
+              onChange={(e) => setDurationSeconds(Number(e.target.value))}
+              className="w-full rounded border p-3 text-black"
+            >
+              <option value={5}>5 sekonda</option>
+              <option value={10}>10 sekonda</option>
+              <option value={15}>15 sekonda</option>
+              <option value={20}>20 sekonda</option>
+              <option value={30}>30 sekonda</option>
+              <option value={40}>40 sekonda</option>
+              <option value={60}>60 sekonda</option>
+            </select>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={saveMessage}
+              disabled={loading}
+              className="rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-50"
+            >
+              {loading
+                ? "Duke ruajtur..."
+                : editingId
+                ? "Ruaj ndryshimet"
+                : "Shto LIVE"}
+            </button>
+
+            {editingId && (
+              <button
+                onClick={resetForm}
+                className="rounded bg-gray-200 px-6 py-3 font-bold text-black"
+              >
+                Anulo
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="rounded-xl bg-white p-6 shadow">
-        <h2 className="mb-4 text-2xl font-bold text-black">Mesazhet LIVE</h2>
+        <h2 className="mb-4 text-2xl font-extrabold text-black">
+          Mesazhet LIVE
+        </h2>
 
         <div className="space-y-3">
           {messages.length === 0 ? (
@@ -130,20 +199,30 @@ export default function LivePage() {
                 className="flex flex-col gap-3 rounded border p-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
-                  <p className="font-bold text-black">
+                  <p className="font-extrabold text-black">
                     {item.type} | {item.message}
                   </p>
 
                   {item.link_url && (
-                    <p className="text-sm text-blue-600">{item.link_url}</p>
+                    <p className="break-all text-sm text-blue-600">
+                      {item.link_url}
+                    </p>
                   )}
 
                   <p className="text-sm text-gray-500">
-                    Statusi: {item.is_active ? "Aktiv" : "Jo aktiv"}
+                    {item.duration_seconds}s • Statusi:{" "}
+                    {item.is_active ? "Aktiv" : "Jo aktiv"}
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => startEdit(item)}
+                    className="rounded bg-blue-100 px-4 py-2 font-bold text-blue-700"
+                  >
+                    Edito
+                  </button>
+
                   <button
                     onClick={() => toggleActive(item.id, item.is_active)}
                     className="rounded bg-gray-200 px-4 py-2 font-bold text-black"

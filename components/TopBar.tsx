@@ -8,6 +8,7 @@ type LiveMessage = {
   message: string;
   link_url?: string | null;
   type?: string | null;
+  duration_seconds?: number | null;
 };
 
 export default function TopBar() {
@@ -31,7 +32,7 @@ export default function TopBar() {
     async function fetchLiveMessages() {
       const { data, error } = await supabase
         .from("live_messages")
-        .select("id, message, link_url, type")
+        .select("id, message, link_url, type, duration_seconds")
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
@@ -47,17 +48,19 @@ export default function TopBar() {
   useEffect(() => {
     if (messages.length <= 1) return;
 
-    const interval = setInterval(() => {
+    const seconds = messages[currentNews]?.duration_seconds || 10;
+
+    const timer = setTimeout(() => {
       setVisible(false);
 
       setTimeout(() => {
         setCurrentNews((prev) => (prev + 1) % messages.length);
         setVisible(true);
       }, 400);
-    }, 10000);
+    }, seconds * 1000);
 
-    return () => clearInterval(interval);
-  }, [messages.length]);
+    return () => clearTimeout(timer);
+  }, [messages, currentNews]);
 
   if (messages.length === 0) {
     return null;

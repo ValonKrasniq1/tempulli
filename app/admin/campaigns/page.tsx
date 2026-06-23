@@ -14,12 +14,15 @@ type Campaign = {
   duration_seconds: number;
   is_active: boolean;
   is_exclusive: boolean;
+  is_archived: boolean;
   sort_order: number;
   expires_at: string | null;
 };
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
@@ -35,6 +38,7 @@ export default function CampaignsPage() {
     const { data } = await supabase
       .from("top_campaigns")
       .select("*")
+      .order("is_archived", { ascending: true })
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
@@ -45,28 +49,8 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }, []);
 
-  async function addCampaign() {
-    if (!title.trim()) {
-      alert("Shkruaje titullin e kampanjës.");
-      return;
-    }
-
-    setLoading(true);
-
-    await supabase.from("top_campaigns").insert({
-      title,
-      description: description || null,
-      media_url: mediaUrl || null,
-      media_type: mediaType,
-      link_url: linkUrl || null,
-      campaign_type: campaignType,
-      duration_seconds: durationSeconds,
-      is_active: true,
-      is_exclusive: isExclusive,
-      sort_order: campaigns.length + 1,
-      expires_at: expiresAt || null,
-    });
-
+  function resetForm() {
+    setEditingId(null);
     setTitle("");
     setDescription("");
     setMediaUrl("");
@@ -76,8 +60,55 @@ export default function CampaignsPage() {
     setDurationSeconds(10);
     setIsExclusive(false);
     setExpiresAt("");
-    setLoading(false);
+  }
 
+  function startEdit(item: Campaign) {
+    setEditingId(item.id);
+    setTitle(item.title);
+    setDescription(item.description || "");
+    setMediaUrl(item.media_url || "");
+    setMediaType(item.media_type || "image");
+    setLinkUrl(item.link_url || "");
+    setCampaignType(item.campaign_type || "MARKETING");
+    setDurationSeconds(item.duration_seconds || 10);
+    setIsExclusive(item.is_exclusive || false);
+    setExpiresAt(item.expires_at ? item.expires_at.slice(0, 16) : "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveCampaign() {
+    if (!title.trim()) {
+      alert("Shkruaje titullin e kampanjës.");
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      title,
+      description: description || null,
+      media_url: mediaUrl || null,
+      media_type: mediaType,
+      link_url: linkUrl || null,
+      campaign_type: campaignType,
+      duration_seconds: durationSeconds,
+      is_active: true,
+      is_exclusive: isExclusive,
+      expires_at: expiresAt || null,
+    };
+
+    if (editingId) {
+      await supabase.from("top_campaigns").update(payload).eq("id", editingId);
+    } else {
+      await supabase.from("top_campaigns").insert({
+        ...payload,
+        is_archived: false,
+        sort_order: campaigns.length + 1,
+      });
+    }
+
+    setLoading(false);
+    resetForm();
     fetchCampaigns();
   }
 
@@ -99,6 +130,24 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }
 
+  async function archiveCampaign(id: number) {
+    await supabase
+      .from("top_campaigns")
+      .update({ is_archived: true, is_active: false })
+      .eq("id", id);
+
+    fetchCampaigns();
+  }
+
+  async function restoreCampaign(id: number) {
+    await supabase
+      .from("top_campaigns")
+      .update({ is_archived: false })
+      .eq("id", id);
+
+    fetchCampaigns();
+  }
+
   async function deleteCampaign(id: number) {
     const ok = confirm("A je i sigurt që do ta fshish këtë kampanjë?");
     if (!ok) return;
@@ -111,8 +160,9 @@ export default function CampaignsPage() {
     <div className="space-y-6 text-black">
       <div className="rounded-2xl bg-white p-6 shadow">
         <h1 className="mb-2 text-3xl font-extrabold text-black">
-          Top Campaigns
+          {editingId ? "Edito Campaign" : "Top Campaigns"}
         </h1>
+
         <p className="mb-6 text-gray-600">
           Menaxho reklamat/eventet që shfaqen në pjesën e sipërme të portalit.
         </p>
@@ -203,30 +253,56 @@ export default function CampaignsPage() {
             />
           </div>
 
-          <button
-            onClick={addCampaign}
-            disabled={loading}
-            className="w-fit rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-50"
-          >
-            {loading ? "Duke shtuar..." : "Shto Campaign"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={saveCampaign}
+              disabled={loading}
+              className="w-fit rounded bg-[#d41c3d] px-6 py-3 font-bold text-white disabled:opacity-50"
+            >
+              {loading
+                ? "Duke ruajtur..."
+                : editingId
+                ? "Ruaj ndryshimet"
+                : "Shto Campaign"}
+            </button>
+
+            {editingId && (
+              <button
+                onClick={resetForm}
+                className="rounded bg-gray-200 px-6 py-3 font-bold text-black"
+              >
+                Anulo
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="rounded-2xl bg-white p-6 shadow">
-        <h2 className="mb-4 text-2xl font-extrabold">Campaigns aktive</h2>
+        <h2 className="mb-4 text-2xl font-extrabold">Campaigns</h2>
 
         <div className="space-y-4">
           {campaigns.length === 0 ? (
             <p className="text-gray-500">Nuk ka ende kampanja.</p>
           ) : (
             campaigns.map((item) => (
-              <div key={item.id} className="rounded-xl border p-4">
+              <div
+                key={item.id}
+                className={`rounded-xl border p-4 ${
+                  item.is_archived ? "bg-gray-100 opacity-70" : "bg-white"
+                }`}
+              >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <span className="mb-2 inline-block rounded bg-[#d41c3d] px-2 py-1 text-xs font-bold text-white">
                       {item.campaign_type}
                     </span>
+
+                    {item.is_archived && (
+                      <span className="ml-2 rounded bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
+                        ARKIVUAR
+                      </span>
+                    )}
 
                     <h3 className="text-xl font-extrabold">{item.title}</h3>
 
@@ -255,20 +331,47 @@ export default function CampaignsPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => toggleActive(item.id, item.is_active)}
-                      className="rounded bg-gray-200 px-4 py-2 font-bold text-black"
+                      onClick={() => startEdit(item)}
+                      className="rounded bg-blue-100 px-4 py-2 font-bold text-blue-700"
                     >
-                      {item.is_active ? "Çaktivizo" : "Aktivizo"}
+                      Edito
                     </button>
 
-                    <button
-                      onClick={() =>
-                        toggleExclusive(item.id, item.is_exclusive)
-                      }
-                      className="rounded bg-black px-4 py-2 font-bold text-white"
-                    >
-                      {item.is_exclusive ? "Hiq Exclusive" : "Exclusive"}
-                    </button>
+                    {!item.is_archived && (
+                      <>
+                        <button
+                          onClick={() => toggleActive(item.id, item.is_active)}
+                          className="rounded bg-gray-200 px-4 py-2 font-bold text-black"
+                        >
+                          {item.is_active ? "Çaktivizo" : "Aktivizo"}
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            toggleExclusive(item.id, item.is_exclusive)
+                          }
+                          className="rounded bg-black px-4 py-2 font-bold text-white"
+                        >
+                          {item.is_exclusive ? "Hiq Exclusive" : "Exclusive"}
+                        </button>
+
+                        <button
+                          onClick={() => archiveCampaign(item.id)}
+                          className="rounded bg-yellow-100 px-4 py-2 font-bold text-yellow-700"
+                        >
+                          Arkivo
+                        </button>
+                      </>
+                    )}
+
+                    {item.is_archived && (
+                      <button
+                        onClick={() => restoreCampaign(item.id)}
+                        className="rounded bg-green-100 px-4 py-2 font-bold text-green-700"
+                      >
+                        Rikthe
+                      </button>
+                    )}
 
                     <button
                       onClick={() => deleteCampaign(item.id)}
