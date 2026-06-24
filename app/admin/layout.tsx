@@ -29,8 +29,14 @@ export default function AdminLayout({
             <Link href="/admin/campaigns" className="block rounded-xl p-3 hover:bg-gray-100">
               Campaigns
             </Link>
+
+            <Link href="/admin/billboard" className="block rounded-xl p-3 hover:bg-gray-100">
+    Billboard Ads
+  </Link>
           </nav>
         </aside>
+
+        
 
         <section className="min-w-0 flex-1">{children}</section>
       </div>

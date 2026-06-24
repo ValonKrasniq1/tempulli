@@ -1,7 +1,7 @@
 import TopBar from "../components/TopBar";
 import TopCampaign from "../components/TopCampaign";
 import Header from "../components/Header";
-import AdsBanner from "../components/AdsBanner";
+import BillboardAd from "../components/BillboardAd";
 import Hero from "../components/Hero";
 import LatestNews from "../components/LatestNews";
 import MostRead from "../components/MostRead";
@@ -16,7 +16,7 @@ export default function Home() {
       <TopCampaign />
       <Header />
       <BreakingNews />
-      <AdsBanner />
+      <BillboardAd />
       <Hero />
       <LatestNews />
       <MostRead />
