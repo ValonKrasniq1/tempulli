@@ -19,9 +19,9 @@ export default function AdminLayout({
                 Dashboard
               </Link>
 
-              <Link href="/admin" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
-                Articles
-              </Link>
+              <Link href="/admin/articles" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
+  Articles
+</Link>
 
               <Link href="/admin/breaking" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
                 Breaking News
