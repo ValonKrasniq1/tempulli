@@ -25,9 +25,6 @@ useEffect(() => {
       .eq("is_archived", false)
       .order("sort_order", { ascending: true });
 
-    console.log("ADS DATA:", data);
-    console.log("ADS ERROR:", error);
-
     if (data) setAds(data);
   }
 
@@ -46,21 +43,21 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }, [ads, current]);
 
-  if (ads.length === 0) {
-    return (
-      <section className="mx-auto max-w-7xl px-4 py-8">
-        <div className="flex h-[250px] items-center justify-center rounded-lg bg-gradient-to-r from-red-700 to-red-500 text-4xl font-extrabold text-white">
-          HAPËSIRË REKLAMUESE 970x250
-        </div>
-      </section>
-    );
-  }
+if (ads.length === 0) {
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-5">
+      <div className="flex h-[250px] items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm">
+        HAPËSIRË REKLAMUESE 970x250
+      </div>
+    </section>
+  );
+}
 
   const ad = ads[current];
 
-  const content = (
-    <section className="mx-auto max-w-7xl px-4 py-8">
-      <div className="h-[250px] overflow-hidden rounded-lg bg-red-600">
+const content = (
+  <section className="mx-auto max-w-7xl px-4 py-5">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         {ad.media_url ? (
           ad.media_type === "video" ? (
             <video
@@ -69,14 +66,14 @@ useEffect(() => {
               muted
               loop
               playsInline
-              className="h-full w-full object-cover"
+              className="w-full h-auto"
             />
           ) : (
             <img
-              src={ad.media_url}
-              alt={ad.title}
-              className="h-full w-full object-cover"
-            />
+  src={ad.media_url}
+  alt={ad.title}
+  className="w-full h-auto transition-transform duration-300 hover:scale-[1.01]"
+/>
           )
         ) : (
           <div className="flex h-full items-center justify-center text-4xl font-extrabold text-white">
