@@ -116,32 +116,35 @@ export default function BreakingNews() {
 
   const current = items[index];
 
-  const text = (
-    <p
-      className={`truncate text-sm font-semibold text-black transition-all duration-500 ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-      }`}
-    >
-      {current.title}
-    </p>
+  const content = (
+    <div className="group relative min-w-0 flex-1 overflow-hidden">
+      <p
+        className={`truncate text-sm font-extrabold text-black transition-all duration-500 md:text-base ${
+          visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        }`}
+      >
+        {current.title}
+      </p>
+    </div>
   );
 
   return (
     <section className="border-b bg-gray-50">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
-        <span className="shrink-0 rounded bg-[#d41c3d] px-3 py-1 text-xs font-bold text-white">
+        <span className="flex shrink-0 items-center gap-2 rounded-md bg-[#d41c3d] px-3 py-1.5 text-xs font-black uppercase tracking-wide text-white">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+          </span>
           BREAKING
         </span>
 
         {current.link_url ? (
-          <a
-            href={current.link_url}
-            className="min-w-0 flex-1"
-          >
-            {text}
+          <a href={current.link_url} className="min-w-0 flex-1">
+            {content}
           </a>
         ) : (
-          <div className="min-w-0 flex-1">{text}</div>
+          <div className="min-w-0 flex-1">{content}</div>
         )}
       </div>
     </section>
