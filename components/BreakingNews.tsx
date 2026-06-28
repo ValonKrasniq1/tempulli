@@ -1,30 +1,130 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-const breakingNews = [
-  "Kosova dhe Shqipëria nënshkruajnë marrëveshje të re bashkëpunimi",
-  "BE miraton planin e ri për zgjerimin në Ballkanin Perëndimor",
-  "Drita e Gjilanit shkon në finale të Kupës së Kosovës",
-  "Ekspertët paralajmërojnë rritje të temperaturave gjatë javës",
-];
+type BreakingItem = {
+  id: number;
+  title: string;
+  link_url: string | null;
+};
+
+type BreakingSettings = {
+  mode: "automatic" | "manual" | "off";
+  manual_title: string | null;
+  manual_link: string | null;
+  duration_seconds: number | null;
+  is_active: boolean;
+};
 
 export default function BreakingNews() {
+  const [items, setItems] = useState<BreakingItem[]>([]);
+  const [duration, setDuration] = useState<number | null>(10);
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    async function fetchBreaking() {
+      const { data: settings } = await supabase
+        .from("breaking_settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (!settings || settings.mode === "off" || settings.is_active === false) {
+        setItems([]);
+        return;
+      }
+
+      const s = settings as BreakingSettings;
+      setDuration(s.duration_seconds);
+
+      if (s.mode === "manual") {
+        if (!s.manual_title) {
+          setItems([]);
+          return;
+        }
+
+        setItems([
+          {
+            id: 1,
+            title: s.manual_title,
+            link_url: s.manual_link,
+          },
+        ]);
+
+        return;
+      }
+
+      const { data: breakingPosts } = await supabase
+        .from("posts")
+        .select("id, title, slug")
+        .eq("status", "published")
+        .eq("is_breaking", true)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (breakingPosts && breakingPosts.length > 0) {
+        setItems(
+          breakingPosts.map((post) => ({
+            id: post.id,
+            title: post.title,
+            link_url: `/article/${post.slug}`,
+          }))
+        );
+        return;
+      }
+
+      const { data: latestPosts } = await supabase
+        .from("posts")
+        .select("id, title, slug")
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (latestPosts) {
+        setItems(
+          latestPosts.map((post) => ({
+            id: post.id,
+            title: post.title,
+            link_url: `/article/${post.slug}`,
+          }))
+        );
+      }
+    }
+
+    fetchBreaking();
+  }, []);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    if (duration === null) return;
+
+    const timer = setTimeout(() => {
       setVisible(false);
 
       setTimeout(() => {
-        setIndex((prev) => (prev + 1) % breakingNews.length);
+        setIndex((prev) => (prev + 1) % items.length);
         setVisible(true);
       }, 400);
-    }, 6000);
+    }, duration * 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearTimeout(timer);
+  }, [items, index, duration]);
+
+  if (items.length === 0) return null;
+
+  const current = items[index];
+
+  const text = (
+    <p
+      className={`truncate text-sm font-semibold text-black transition-all duration-500 ${
+        visible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+      }`}
+    >
+      {current.title}
+    </p>
+  );
 
   return (
     <section className="border-b bg-gray-50">
@@ -33,13 +133,16 @@ export default function BreakingNews() {
           BREAKING
         </span>
 
-        <p
-          className={`truncate text-sm font-semibold text-black transition-all duration-500 ${
-            visible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-          }`}
-        >
-          {breakingNews[index]}
-        </p>
+        {current.link_url ? (
+          <a
+            href={current.link_url}
+            className="min-w-0 flex-1"
+          >
+            {text}
+          </a>
+        ) : (
+          <div className="min-w-0 flex-1">{text}</div>
+        )}
       </div>
     </section>
   );
