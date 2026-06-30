@@ -14,8 +14,8 @@ type Post = {
 
 export default function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [totalViews, setTotalViews] = useState(0);
-  const [todayViews, setTodayViews] = useState(0);
+  const [totalVisitors, setTotalVisitors] = useState(0);
+  const [todayVisitors, setTodayVisitors] = useState(0);
   const [topPage, setTopPage] = useState("-");
   const [billboards, setBillboards] = useState(0);
   const [campaigns, setCampaigns] = useState(0);
@@ -29,31 +29,36 @@ export default function AdminDashboard() {
 
     if (postsData) setPosts(postsData);
 
-    const { count: total } = await supabase
+    const { data: allViews } = await supabase
       .from("page_views")
-      .select("*", { count: "exact", head: true });
+      .select("visitor_id, path, created_at");
 
-    setTotalViews(total || 0);
+    if (allViews) {
+      const uniqueVisitors = new Set(
+        allViews.map((v) => v.visitor_id).filter(Boolean)
+      );
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      setTotalVisitors(uniqueVisitors.size);
 
-    const { count: todayCount } = await supabase
-      .from("page_views")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", today.toISOString());
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    setTodayViews(todayCount || 0);
+      const todayUniqueVisitors = new Set(
+        allViews
+          .filter((v) => new Date(v.created_at) >= today)
+          .map((v) => v.visitor_id)
+          .filter(Boolean)
+      );
 
-    const { data: views } = await supabase.from("page_views").select("path");
+      setTodayVisitors(todayUniqueVisitors.size);
 
-    if (views && views.length > 0) {
       const counts: Record<string, number> = {};
-      views.forEach((v) => {
+      allViews.forEach((v) => {
         counts[v.path] = (counts[v.path] || 0) + 1;
       });
 
-      setTopPage(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      if (sorted.length > 0) setTopPage(sorted[0][0]);
     }
 
     const { count: billboardCount } = await supabase
@@ -117,8 +122,8 @@ export default function AdminDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card title="Total lajme" value={posts.length} label="Artikuj" />
-        <Card title="Vizita totale" value={totalViews} label="Total" />
-        <Card title="Vizita sot" value={todayViews} label="Sot" />
+        <Card title="Vizitorë unikë" value={totalVisitors} label="Total" />
+        <Card title="Vizitorë sot" value={todayVisitors} label="Sot" />
         <Card title="Faqja më e vizituar" value={topPage} label="Top page" />
       </div>
 
@@ -143,10 +148,7 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          <Link
-            href="/admin/articles"
-            className="mt-5 inline-block rounded-xl border px-4 py-3 text-sm font-extrabold"
-          >
+          <Link href="/admin/articles" className="mt-5 inline-block rounded-xl border px-4 py-3 text-sm font-extrabold">
             Shiko të gjitha lajmet →
           </Link>
         </section>
@@ -180,15 +182,7 @@ export default function AdminDashboard() {
   );
 }
 
-function Card({
-  title,
-  value,
-  label,
-}: {
-  title: string;
-  value: string | number;
-  label: string;
-}) {
+function Card({ title, value, label }: { title: string; value: string | number; label: string }) {
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
       <p className="text-sm font-semibold text-gray-500">{title}</p>
