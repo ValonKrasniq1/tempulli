@@ -22,11 +22,14 @@ export default function LatestNews() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
 
   useEffect(() => {
     async function fetchPosts() {
+      setLoading(true);
+
       const from = (page - 1) * POSTS_PER_PAGE;
       const to = from + POSTS_PER_PAGE - 1;
 
@@ -43,6 +46,8 @@ export default function LatestNews() {
         setPosts(data as Post[]);
         setTotalPosts(count || 0);
       }
+
+      setLoading(false);
     }
 
     fetchPosts();
@@ -55,32 +60,43 @@ export default function LatestNews() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {posts.map((post) => (
-          <Link href={`/article/${post.slug}`} key={post.id}>
-            <article className="cursor-pointer transition hover:opacity-75">
-              {post.image_url ? (
-                <img
-                  src={post.image_url}
-                  alt={post.title}
-                  className="mb-4 h-40 w-full rounded-lg object-cover"
-                />
-              ) : (
-                <div className="mb-4 h-40 rounded-lg bg-gray-300"></div>
-              )}
+        {loading &&
+          Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="animate-pulse">
+              <div className="mb-4 h-40 rounded-lg bg-gray-200" />
+              <div className="mb-2 h-3 w-16 rounded bg-gray-200" />
+              <div className="h-4 w-full rounded bg-gray-200" />
+              <div className="mt-2 h-4 w-3/4 rounded bg-gray-200" />
+            </div>
+          ))}
 
-              <p className="mb-2 text-xs font-bold text-[#d41c3d]">
-                {post.category}
-              </p>
+        {!loading &&
+          posts.map((post) => (
+            <Link href={`/article/${post.slug}`} key={post.id}>
+              <article className="cursor-pointer transition hover:opacity-75">
+                {post.image_url ? (
+                  <img
+                    src={post.image_url}
+                    alt={post.title}
+                    className="mb-4 h-40 w-full rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="mb-4 h-40 rounded-lg bg-gray-300" />
+                )}
 
-              <h3 className="font-bold leading-snug text-black">
-                {post.title}
-              </h3>
-            </article>
-          </Link>
-        ))}
+                <p className="mb-2 text-xs font-bold text-[#d41c3d]">
+                  {post.category}
+                </p>
+
+                <h3 className="font-bold leading-snug text-black">
+                  {post.title}
+                </h3>
+              </article>
+            </Link>
+          ))}
       </div>
 
-      {totalPages > 1 && (
+      {!loading && totalPages > 1 && (
         <div className="mt-10 flex items-center justify-center gap-3">
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}

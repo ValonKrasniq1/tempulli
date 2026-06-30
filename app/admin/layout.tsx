@@ -54,6 +54,13 @@ export default function AdminLayout({
               <Link href="/admin" className="block rounded-xl px-4 py-3 text-gray-400">
                 Settings
               </Link>
+
+              <Link
+  href="/admin/video-stories"
+  className="block rounded-xl p-3 hover:bg-gray-100"
+>
+  Video Stories
+</Link>
             </nav>
 
             <a

@@ -3,6 +3,7 @@ import TopCampaign from "../components/TopCampaign";
 import Header from "../components/Header";
 import BillboardAd from "../components/BillboardAd";
 import Hero from "../components/Hero";
+import VideoStories from "../components/VideoStories";
 import LatestNews from "../components/LatestNews";
 import MostRead from "../components/MostRead";
 import Categories from "../components/Categories";
@@ -18,6 +19,7 @@ export default function Home() {
       <BreakingNews />
       <BillboardAd />
       <Hero />
+      <VideoStories />
       <LatestNews />
       <MostRead />
       <Categories />
