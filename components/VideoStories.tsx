@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
 type VideoStory = {
@@ -60,7 +61,6 @@ export default function VideoStories() {
         .from("video_stories")
         .select("*")
         .eq("is_active", true)
-        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false })
         .limit(settingsData.show_count || 4);
 
@@ -68,6 +68,15 @@ export default function VideoStories() {
     }
 
     fetchVideoStories();
+  }, []);
+
+  useEffect(() => {
+    function closeOnEsc(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedVideo(null);
+    }
+
+    window.addEventListener("keydown", closeOnEsc);
+    return () => window.removeEventListener("keydown", closeOnEsc);
   }, []);
 
   if (!settings || videos.length === 0) return null;
@@ -85,9 +94,12 @@ export default function VideoStories() {
               {settings.title || "VIDEO STORIES"}
             </h2>
 
-            <button className="text-sm font-extrabold text-[#d41c3d]">
+            <Link
+              href="/videos"
+              className="text-sm font-extrabold text-[#d41c3d]"
+            >
               Shiko të gjitha →
-            </button>
+            </Link>
           </div>
 
           <div className="flex gap-4 overflow-x-auto pb-3">
@@ -131,8 +143,14 @@ export default function VideoStories() {
       </section>
 
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
-          <div className="relative w-full max-w-4xl rounded-2xl bg-black p-3">
+        <div
+          onClick={() => setSelectedVideo(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-4xl rounded-2xl bg-black p-3"
+          >
             <button
               onClick={() => setSelectedVideo(null)}
               className="absolute -right-3 -top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white text-xl font-black text-black"
