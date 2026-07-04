@@ -45,11 +45,11 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-10 lg:grid-cols-3">
+    <section className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
         {featured ? (
           <Link href={`/article/${featured.slug}`}>
-            <div className="relative h-[420px] cursor-pointer overflow-hidden rounded bg-black transition hover:opacity-95">
+            <div className="relative h-[300px] cursor-pointer overflow-hidden rounded-xl bg-black transition hover:opacity-95 sm:h-[360px] lg:h-[420px]">
               {featured.image_url && (
                 <img
                   src={featured.image_url}
@@ -60,29 +60,29 @@ export default function Hero() {
 
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
 
-              <div className="absolute bottom-0 p-8 text-white">
-                <span className="mb-4 inline-block bg-[#d41c3d] px-3 py-1 text-xs font-bold">
+              <div className="absolute bottom-0 p-5 text-white md:p-8">
+                <span className="mb-3 inline-block rounded-md bg-[#d41c3d] px-3 py-1 text-[10px] font-bold uppercase tracking-wide sm:text-xs">
                   LAJMI KRYESOR
                 </span>
 
-                <h2 className="max-w-2xl text-4xl font-bold leading-tight">
+                <h2 className="max-w-2xl text-2xl font-extrabold leading-tight sm:text-3xl lg:text-4xl">
                   {featured.title}
                 </h2>
 
-                <p className="mt-4 line-clamp-2 max-w-xl text-sm text-gray-200">
+                <p className="mt-3 line-clamp-2 max-w-xl text-xs text-gray-200 sm:text-sm">
                   {featured.content}
                 </p>
               </div>
             </div>
           </Link>
         ) : (
-          <div className="flex h-[420px] items-center justify-center rounded bg-black text-white">
+          <div className="flex h-[300px] items-center justify-center rounded-xl bg-black text-white sm:h-[360px] lg:h-[420px]">
             Zgjidh një lajm kryesor nga dashboard.
           </div>
         )}
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {sideNews.length === 0 ? (
           <div className="rounded border p-4 text-sm text-gray-500">
             Zgjidh deri në 3 lajme për anën e djathtë nga dashboard.
@@ -90,14 +90,28 @@ export default function Hero() {
         ) : (
           sideNews.map((post) => (
             <Link href={`/article/${post.slug}`} key={post.id}>
-              <article className="cursor-pointer border-b pb-4 transition hover:opacity-70">
-                <p className="mb-2 text-xs font-bold text-[#d41c3d]">
-                  {post.category}
-                </p>
+              <article className="flex cursor-pointer gap-4 border-b pb-4 transition hover:opacity-70">
+                <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-200">
+                  {post.image_url ? (
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : null}
+                </div>
 
-                <h3 className="text-lg font-bold text-black">{post.title}</h3>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs font-bold text-[#d41c3d]">
+                    {post.category}
+                  </p>
 
-                <p className="mt-2 text-sm text-gray-500">Lajm i zgjedhur</p>
+                  <h3 className="line-clamp-3 text-base font-bold leading-snug text-black">
+                    {post.title}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-gray-500">Lajm i zgjedhur</p>
+                </div>
               </article>
             </Link>
           ))
