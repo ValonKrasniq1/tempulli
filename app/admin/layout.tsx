@@ -34,12 +34,8 @@ export default function AdminLayout({
                   LIVE Updates
                 </Link>
 
-                <Link href="/admin/campaigns" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
-                  Campaigns
-                </Link>
-
-                <Link href="/admin/billboard" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
-                  Billboard Ads
+                <Link href="/admin/advertising" className="block rounded-xl px-4 py-3 hover:bg-gray-100">
+                  Advertising
                 </Link>
 
                 <Link href="/admin/video-stories" className="block rounded-xl px-4 py-3 hover:bg-gray-100">

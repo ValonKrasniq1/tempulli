@@ -172,8 +172,7 @@ export default function AdminDashboard() {
               <Quick href="/admin/articles" text="📰 Articles" />
               <Quick href="/admin/breaking" text="⚡ Breaking News" />
               <Quick href="/admin/live" text="📡 LIVE Updates" />
-              <Quick href="/admin/billboard" text="🖼 Billboard Ads" />
-              <Quick href="/admin/campaigns" text="📢 Campaigns" />
+              <Quick href="/admin/advertising" text="📢 Advertising" />
             </div>
           </div>
         </aside>
