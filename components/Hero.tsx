@@ -38,7 +38,7 @@ export default function Hero() {
         .eq("status", "published")
         .eq("is_sidebar", true)
         .order("created_at", { ascending: false })
-        .limit(4);
+        .limit(3);
 
       setFeatured((featuredData as Post) || null);
       setSideNews((sidebarData as Post[]) || []);
