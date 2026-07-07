@@ -49,7 +49,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 pt-0 pb-4 lg:grid-cols-3 lg:gap-6 lg:pb-6">
+    <section className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 pt-0 pb-5 lg:grid-cols-3 lg:gap-6 lg:pb-6">
       <div className="lg:col-span-2">
         {loading ? (
           <div className="h-[250px] animate-pulse rounded-xl bg-gray-100 sm:h-[330px] lg:h-[420px]" />
@@ -74,10 +74,6 @@ export default function Hero() {
                 <h2 className="max-w-2xl text-xl font-extrabold leading-tight sm:text-3xl lg:text-4xl">
                   {featured.title}
                 </h2>
-
-                <p className="mt-3 hidden line-clamp-2 max-w-xl text-sm text-gray-200 md:block">
-                  {featured.content}
-                </p>
               </div>
             </div>
           </Link>
