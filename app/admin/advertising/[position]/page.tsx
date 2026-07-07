@@ -55,15 +55,19 @@ export default function AdvertisingPositionPage() {
     if (file) {
       const filePath = `${position}/${Date.now()}-${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("ad-banners")
-        .upload(filePath, file, { upsert: true });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+  .from("ad-banners")
+  .upload(filePath, file, { upsert: true });
 
-      if (uploadError) {
-        alert("Gabim gjatë upload-it.");
-        setLoading(false);
-        return;
-      }
+console.log("UPLOAD:", uploadData);
+console.log("ERROR:", uploadError);
+
+if (uploadError) {
+  alert(uploadError.message);
+  console.error(uploadError);
+  setLoading(false);
+  return;
+}
 
       const { data } = supabase.storage
         .from("ad-banners")
