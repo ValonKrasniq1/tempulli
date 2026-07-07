@@ -70,7 +70,7 @@ if (uploadError) {
 }
 
       const { data } = supabase.storage
-        .from("ad-banners")
+        .from("AD-BANNERS")
         .getPublicUrl(filePath);
 
       imageUrl = data.publicUrl;
