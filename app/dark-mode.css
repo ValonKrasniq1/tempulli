@@ -1,0 +1,57 @@
+
+html[data-theme="dark"] {
+  --background: #0c0d0e;
+  --foreground: #f5f5f5;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] main {
+  background-color: #0c0d0e;
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .tempulli-left {
+  background-color: #17191b;
+}
+
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-gray-100,
+html[data-theme="dark"] .bg-\[\#f5f6f8\] {
+  background-color: #101214;
+}
+
+html[data-theme="dark"] .text-black,
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-\[\#151515\] {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500 {
+  color: #b7bdc5;
+}
+
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300,
+html[data-theme="dark"] .tempulli-left {
+  border-color: #2c3034;
+}
+
+html[data-theme="dark"] .hover\:bg-gray-50:hover,
+html[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background-color: #25282b;
+}
+
+html[data-theme="dark"] input {
+  background-color: #101214;
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .bg-red-50 {
+  background-color: #311c22;
+}

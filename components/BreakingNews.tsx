@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,6 +25,8 @@ export default function BreakingNews() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     async function fetchBreaking() {
       const { data: settings } = await supabase
         .from("breaking_settings")
@@ -31,12 +34,19 @@ export default function BreakingNews() {
         .limit(1)
         .single();
 
-      if (!settings || settings.mode === "off" || settings.is_active === false) {
+      if (!active) return;
+
+      if (
+        !settings ||
+        settings.mode === "off" ||
+        settings.is_active === false
+      ) {
         setItems([]);
         return;
       }
 
       const s = settings as BreakingSettings;
+
       setDuration(s.duration_seconds);
 
       if (s.mode === "manual") {
@@ -44,6 +54,8 @@ export default function BreakingNews() {
           setItems([]);
           return;
         }
+
+        setIndex(0);
 
         setItems([
           {
@@ -58,13 +70,17 @@ export default function BreakingNews() {
 
       const { data: breakingPosts } = await supabase
         .from("posts")
-        .select("id, title, slug")
+        .select("id,title,slug")
         .eq("status", "published")
         .eq("is_breaking", true)
         .order("created_at", { ascending: false })
         .limit(5);
 
+      if (!active) return;
+
       if (breakingPosts && breakingPosts.length > 0) {
+        setIndex(0);
+
         setItems(
           breakingPosts.map((post) => ({
             id: post.id,
@@ -72,17 +88,22 @@ export default function BreakingNews() {
             link_url: `/article/${post.slug}`,
           }))
         );
+
         return;
       }
 
       const { data: latestPosts } = await supabase
         .from("posts")
-        .select("id, title, slug")
+        .select("id,title,slug")
         .eq("status", "published")
         .order("created_at", { ascending: false })
         .limit(5);
 
+      if (!active) return;
+
       if (latestPosts) {
+        setIndex(0);
+
         setItems(
           latestPosts.map((post) => ({
             id: post.id,
@@ -94,59 +115,94 @@ export default function BreakingNews() {
     }
 
     fetchBreaking();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
     if (items.length <= 1) return;
-    if (duration === null) return;
+    if (duration === null || duration <= 0) return;
+
+    let transitionTimer:
+      | ReturnType<typeof setTimeout>
+      | undefined;
 
     const timer = setTimeout(() => {
       setVisible(false);
 
-      setTimeout(() => {
+      transitionTimer = setTimeout(() => {
         setIndex((prev) => (prev + 1) % items.length);
         setVisible(true);
       }, 400);
+
     }, duration * 1000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+
+      if (transitionTimer !== undefined) {
+        clearTimeout(transitionTimer);
+      }
+    };
+
   }, [items, index, duration]);
 
   if (items.length === 0) return null;
 
-  const current = items[index];
+  const current = items[index % items.length];
 
   const content = (
     <div className="group relative min-w-0 flex-1 overflow-hidden">
+
       <p
         className={`truncate text-sm font-extrabold text-black transition-all duration-500 md:text-base ${
-          visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+          visible
+            ? "translate-y-0 opacity-100"
+            : "translate-y-2 opacity-0"
         }`}
       >
         {current.title}
       </p>
+
     </div>
   );
 
   return (
-    <section className="border-b bg-gray-50">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
+    <section className="w-full border-b border-gray-200 bg-gray-50">
+
+      <div className="tempulli-container flex items-center gap-4 py-3">
+
         <span className="flex shrink-0 items-center gap-2 rounded-md bg-[#d41c3d] px-3 py-1.5 text-xs font-black uppercase tracking-wide text-white">
+
           <span className="relative flex h-2.5 w-2.5">
+
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
+
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+
           </span>
+
           BREAKING
+
         </span>
 
         {current.link_url ? (
-          <a href={current.link_url} className="min-w-0 flex-1">
+          <a
+            href={current.link_url}
+            className="min-w-0 flex-1"
+          >
             {content}
           </a>
         ) : (
-          <div className="min-w-0 flex-1">{content}</div>
+          <div className="min-w-0 flex-1">
+            {content}
+          </div>
         )}
+
       </div>
+
     </section>
   );
 }

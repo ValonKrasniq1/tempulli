@@ -1,26 +1,143 @@
+﻿
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --tempulli-red: #d41c3d;
+  --header-offset: 138px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
+}
+
+/* UNIVERSAL CONTAINER */
+
+.tempulli-container,
+.tempulli-layout {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* MAIN LAYOUT */
+
+.tempulli-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 240px;
+  grid-template-areas: "ads content navigation";
+  align-items: start;
+  direction: ltr;
+  gap: 20px;
+  padding-bottom: 40px;
+}
+
+/* LEFT - ADVERTISING */
+
+.tempulli-ads {
+  grid-area: ads;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* CENTER - CONTENT */
+
+.tempulli-content {
+  grid-area: content;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* RIGHT - NAVIGATION */
+
+.tempulli-left {
+  grid-area: navigation;
+  display: block;
+  position: sticky;
+  top: var(--header-offset);
+  min-width: 0;
+  max-height: calc(100dvh - var(--header-offset) - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  z-index: 10;
+}
+
+.tempulli-right {
+  grid-area: navigation;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* SCROLL OFFSET */
+
+#video,
+#lajmet {
+  scroll-margin-top: 140px;
+}
+
+/* TABLET */
+
+@media (max-width: 1199px) {
+  .tempulli-layout {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-areas:
+      "content navigation"
+      "ads navigation";
+    gap: 16px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* MOBILE */
+
+@media (max-width: 767px) {
+  .tempulli-container,
+  .tempulli-layout {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .tempulli-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "content"
+      "ads";
+    padding-bottom: 24px;
+    gap: 16px;
+  }
+
+  .tempulli-left,
+  .tempulli-right {
+    display: none;
+  }
+
+  .tempulli-content {
+    gap: 16px;
+  }
 }

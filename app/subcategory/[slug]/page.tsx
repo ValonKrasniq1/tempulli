@@ -1,7 +1,9 @@
+
 import Link from "next/link";
 import TopBar from "../../../components/TopBar";
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
+import DiscoverFeed from "../../../components/DiscoverFeed";
 import { supabase } from "../../../lib/supabase";
 
 type Props = {
@@ -42,6 +44,11 @@ const subcategoryMap: Record<string, string> = {
 
 export default async function SubcategoryPage({ params }: Props) {
   const { slug } = await params;
+
+  if (slug === "teknologji") {
+    return <DiscoverFeed brand="tech" />;
+  }
+
   const subcategory = subcategoryMap[slug] || slug;
 
   const { data: posts } = await supabase
@@ -62,7 +69,9 @@ export default async function SubcategoryPage({ params }: Props) {
         </h1>
 
         {!posts || posts.length === 0 ? (
-          <p className="text-gray-500">Nuk ka lajme në këtë nënkategori.</p>
+          <p className="text-gray-500">
+            Nuk ka lajme në këtë nënkategori.
+          </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {posts.map((post) => (
