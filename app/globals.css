@@ -1,5 +1,4 @@
-﻿
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -13,6 +12,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
+}
+
+/* MOBILE TOUCH OPTIMIZATION */
+
+html,
+body {
+  touch-action: manipulation;
 }
 
 body {
